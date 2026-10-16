@@ -35,6 +35,10 @@ Restart ComfyUI and refresh the browser.
 
 Only the images are saved (no workflow metadata is embedded). Previews live in ComfyUI's `temp` folder, so they disappear after a restart until the workflow is run again.
 
+## Credits
+
+Inspired by the **Image Compare Pixaroma** node from [ComfyUI-Pixaroma](https://github.com/pixaroma/ComfyUI-Pixaroma) by [pixaroma](https://github.com/pixaroma) (MIT License). This is an independent, simplified reimplementation with three inputs; it does not depend on that package.
+
 ## License
 
 MIT

@@ -1,3 +1,4 @@
+// Inspired by "Image Compare Pixaroma" from https://github.com/pixaroma/ComfyUI-Pixaroma (MIT).
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 
