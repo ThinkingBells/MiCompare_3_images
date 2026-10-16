@@ -1,6 +1,7 @@
 # Inspired by "Image Compare Pixaroma" from https://github.com/pixaroma/ComfyUI-Pixaroma (MIT).
 import os
 import random
+from datetime import datetime
 
 import numpy as np
 from aiohttp import web
@@ -78,12 +79,14 @@ async def compare3_save(request):
 
         img = Image.open(src)
         out_dir = folder_paths.get_output_directory()
-        folder, name, counter, sub, _ = folder_paths.get_save_image_path(
-            f"Compare3_img{slot}", out_dir, img.width, img.height
-        )
-        file = f"{name}_{counter:05}_.png"
-        img.save(os.path.join(folder, file), compress_level=4)
-        return web.json_response({"filename": file, "subfolder": sub})
+        stamp = datetime.now().strftime("%m-%d-%H-%M-%S")
+        file = f"{stamp}-image{slot}.png"
+        n = 1
+        while os.path.exists(os.path.join(out_dir, file)):
+            n += 1
+            file = f"{stamp}-image{slot}_{n}.png"
+        img.save(os.path.join(out_dir, file), compress_level=4)
+        return web.json_response({"filename": file, "subfolder": ""})
     except Exception as e:  # noqa: BLE001
         return web.json_response({"error": str(e)}, status=500)
 

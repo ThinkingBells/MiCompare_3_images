@@ -7,7 +7,7 @@ A small ComfyUI custom node to compare **up to three images** inside the node it
 - Three optional `IMAGE` inputs: `image1`, `image2`, `image3` (a muted or unconnected branch never raises an error).
 - **Show 1 / Show 2 / Show 3** buttons switch the image displayed.
 - **Wipe 1-2 / Wipe 1-3 / Wipe 2-3** buttons compare a pair of images: hover the viewer and a bar follows the cursor from left to right, revealing one image or the other.
-- **Save 1 / Save 2 / Save 3** buttons save the matching image to ComfyUI's default `output` folder as `Compare3_imgN_00001_.png`.
+- **Save 1 / Save 2 / Save 3** buttons save the matching image to ComfyUI's default `output` folder named `MM-dd-HH-mm-ss-imageN.png` (e.g. `10-16-14-35-22-image1.png`).
 - The resolution of each image is shown under its Save button.
 - The viewer fills the node and scales when you resize it.
 - The images and the selected view are remembered when you switch workflow tabs or reload.
