@@ -1,0 +1,12 @@
+[project]
+name = "micompare-3-images"
+version = "1.0.0"
+description = "ComfyUI node to compare up to three images with Show 1/2/3 and Save 1/2/3 buttons."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.comfy]
+DisplayName = "MiCompare 3 images"
+# PublisherId = "your-publisher-id"
