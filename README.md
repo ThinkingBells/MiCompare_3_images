@@ -6,6 +6,7 @@ A small ComfyUI custom node to compare **up to three images** inside the node it
 
 - Three optional `IMAGE` inputs: `image1`, `image2`, `image3` (a muted or unconnected branch never raises an error).
 - **Show 1 / Show 2 / Show 3** buttons switch the image displayed.
+- **Wipe 1-2 / Wipe 1-3 / Wipe 2-3** buttons compare a pair of images: hover the viewer and a bar follows the cursor from left to right, revealing one image or the other.
 - **Save 1 / Save 2 / Save 3** buttons save the matching image to ComfyUI's default `output` folder as `Compare3_imgN_00001_.png`.
 - The resolution of each image is shown under its Save button.
 - The viewer fills the node and scales when you resize it.
@@ -28,7 +29,7 @@ Restart ComfyUI and refresh the browser.
 
 1. Add **MiCompare 3 images** (double-click the canvas and search "MiCompare").
 2. Connect up to three `IMAGE` outputs.
-3. Run the workflow, then pick an image with **Show N** and save it with **Save N**.
+3. Run the workflow, then pick an image with **Show N**, compare two of them with **Wipe A-B**, and save with **Save N**.
 
 ## Notes
 

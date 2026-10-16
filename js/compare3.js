@@ -3,6 +3,7 @@ import { api } from "../../scripts/api.js";
 
 const STATE_KEY = "compare3State";
 const ACCENT = "#e0702d";
+const WIPES = [[1, 2], [1, 3], [2, 3]];
 
 function viewUrl(d) {
   return api.apiURL(
@@ -60,6 +61,15 @@ function buildUI(node) {
     row1.appendChild(b);
     return b;
   });
+  const rowD = document.createElement("div");
+  rowD.style.cssText = "display:flex;gap:3px;";
+  const wipeBtns = WIPES.map(([a, b]) => {
+    const btn = makeBtn(`Wipe ${a}-${b}`);
+    btn.dataset.label = `Wipe ${a}-${b}`;
+    btn.onclick = () => { node._c3Show = `w${a}${b}`; refresh(node); saveState(node); };
+    rowD.appendChild(btn);
+    return btn;
+  });
   const saveBtns = [1, 2, 3].map((n) => {
     const b = makeBtn(`Save ${n}`);
     b.dataset.label = `Save ${n}`;
@@ -89,12 +99,49 @@ function buildUI(node) {
   note.style.cssText =
     "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;" +
     "color:#777;font:12px 'Segoe UI',sans-serif;";
-  view.append(img, note);
+  const imgB = document.createElement("img");
+  imgB.style.cssText =
+    "position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;";
+  const bar = document.createElement("div");
+  bar.style.cssText =
+    "position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:" + ACCENT +
+    ";display:none;pointer-events:none;box-shadow:0 0 4px rgba(0,0,0,.7);";
+  const tagL = document.createElement("div");
+  const tagR = document.createElement("div");
+  const tagCss =
+    "position:absolute;top:6px;padding:1px 7px;border-radius:9px;background:" + ACCENT +
+    ";color:#fff;font:11px 'Segoe UI',sans-serif;display:none;pointer-events:none;";
+  tagL.style.cssText = tagCss + "left:6px;";
+  tagR.style.cssText = tagCss + "right:6px;";
+  view.append(img, imgB, bar, tagL, tagR, note);
+  view.style.cursor = "ew-resize";
+  view.onmousemove = (e) => {
+    if (typeof node._c3Show !== "string") return;
+    const r = view.getBoundingClientRect();
+    node._c3Pos = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    updateWipe(node);
+  };
 
-  root.append(row1, row2, info, view);
-  root.insertBefore(info, row2.nextSibling);
-  node._c3 = { showBtns, saveBtns, dims, img, note };
+  root.append(row1, rowD, row2, info, view);
+  node._c3 = { showBtns, wipeBtns, saveBtns, dims, img, imgB, bar, tagL, tagR, note, view };
   return root;
+}
+
+// Position the bar and clip image B (shown to the right of the bar).
+// `node._c3Pos` is a fraction of the displayed image width.
+function updateWipe(node) {
+  const ui = node._c3;
+  const show = node._c3Show;
+  if (!ui || typeof show !== "string") return;
+  const imgs = node._c3Imgs || [];
+  const ma = imgs[Number(show[1]) - 1];
+  const W = ui.view.clientWidth, H = ui.view.clientHeight;
+  if (!ma?.w || !W || !H) return;
+  const dw = ma.w * Math.min(W / ma.w, H / ma.h);
+  const ox = (W - dw) / 2;
+  const x = ox + (node._c3Pos ?? 0.5) * dw;
+  ui.bar.style.left = `${x}px`;
+  ui.imgB.style.clipPath = `inset(0 0 0 ${x}px)`;
 }
 
 function refresh(node) {
@@ -102,23 +149,53 @@ function refresh(node) {
   if (!ui) return;
   const imgs = node._c3Imgs || [null, null, null];
   const show = node._c3Show || 1;
+  const isWipe = typeof show === "string";
   [0, 1, 2].forEach((i) => {
     setActive(ui.showBtns[i], show === i + 1);
     ui.showBtns[i].style.opacity = imgs[i] ? "1" : "0.5";
     ui.saveBtns[i].style.opacity = imgs[i] ? "1" : "0.5";
   });
-  const cur = imgs[show - 1];
-  if (cur) {
-    ui.img.src = cur.url;
-    ui.img.style.display = "block";
-    ui.note.style.display = "none";
+  WIPES.forEach(([a, b], i) => {
+    setActive(ui.wipeBtns[i], show === `w${a}${b}`);
+    ui.wipeBtns[i].style.opacity = imgs[a - 1] && imgs[b - 1] ? "1" : "0.5";
+  });
+  ui.img.style.display = "none";
+  ui.imgB.style.display = "none";
+  ui.bar.style.display = "none";
+  ui.tagL.style.display = "none";
+  ui.tagR.style.display = "none";
+  ui.note.style.display = "none";
+  ui.view.style.cursor = isWipe ? "ew-resize" : "default";
+
+  if (isWipe) {
+    const a = Number(show[1]), b = Number(show[2]);
+    const ma = imgs[a - 1], mb = imgs[b - 1];
+    if (!ma || !mb) {
+      ui.note.style.display = "flex";
+      ui.note.textContent = `Wipe ${a}-${b} needs images ${a} and ${b}`;
+    } else {
+      ui.img.src = ma.url;
+      ui.imgB.src = mb.url;
+      ui.img.style.display = "block";
+      ui.imgB.style.display = "block";
+      ui.bar.style.display = "block";
+      ui.tagL.textContent = String(a);
+      ui.tagR.textContent = String(b);
+      ui.tagL.style.display = "block";
+      ui.tagR.style.display = "block";
+      updateWipe(node);
+    }
   } else {
-    ui.img.removeAttribute("src");
-    ui.img.style.display = "none";
-    ui.note.style.display = "flex";
-    ui.note.textContent = imgs.some(Boolean)
-      ? `Image ${show} not connected`
-      : "Connect images & run to compare";
+    const cur = imgs[show - 1];
+    if (cur) {
+      ui.img.src = cur.url;
+      ui.img.style.display = "block";
+    } else {
+      ui.note.style.display = "flex";
+      ui.note.textContent = imgs.some(Boolean)
+        ? `Image ${show} not connected`
+        : "Connect images & run to compare";
+    }
   }
   [0, 1, 2].forEach((i) => {
     const m = imgs[i];
@@ -153,7 +230,7 @@ function setImages(node, metas) {
     }
   }
   node._c3Imgs = imgs;
-  if (!imgs[(node._c3Show || 1) - 1]) {
+  if (typeof node._c3Show !== "string" && !imgs[(node._c3Show || 1) - 1]) {
     const first = imgs.findIndex(Boolean);
     if (first >= 0) node._c3Show = first + 1;
   }
