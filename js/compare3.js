@@ -49,7 +49,9 @@ function toast(msg) {
 function buildUI(node) {
   const root = document.createElement("div");
   root.style.cssText =
-    "display:flex;flex-direction:column;gap:4px;width:100%;height:100%;box-sizing:border-box;";
+    "display:flex;flex-direction:column;gap:4px;width:100%;height:100%;box-sizing:border-box;" +
+    // Never let the content push the node's column wider than the node itself.
+    "min-width:0;overflow:hidden;contain:inline-size;";
 
   const row1 = document.createElement("div");
   const row2 = document.createElement("div");
@@ -124,7 +126,7 @@ function buildUI(node) {
   };
 
   root.append(row1, rowD, row2, info, view);
-  node._c3 = { showBtns, wipeBtns, saveBtns, dims, img, imgB, bar, tagL, tagR, note, view };
+  node._c3 = { root, showBtns, wipeBtns, saveBtns, dims, img, imgB, bar, tagL, tagR, note, view };
   return root;
 }
 
@@ -257,6 +259,37 @@ async function saveToOutput(node, n, btn) {
   }
 }
 
+// The DOM widget keeps the width it had at creation (440px) until the node is
+// laid out again. Re-apply the node size and redraw so it fills the real width
+// after an import / paste / workflow load, and whenever the node is resized.
+// ComfyUI sizes the DOM widget's wrapper itself, but in some sessions it keeps a
+// stale width from an earlier node size, so the content overflows the node.
+// Derive the width from the node's real size instead (the wrapper margin is
+// 20px in the classic renderer and 24px in Nodes 2.0).
+function fitWidth(node) {
+  const root = node._c3?.root;
+  if (!root || !node.size) return;
+  const margin = window.LiteGraph?.vueNodesMode ? 24 : 20;
+  const w = `${Math.max(120, node.size[0] - margin)}px`;
+  if (root.style.width !== w) {
+    root.style.width = w;
+    updateWipe(node);
+  }
+}
+
+function relayout(node) {
+  const go = () => {
+    if (!node.size) return;
+    node.setSize([node.size[0], node.size[1]]);
+    node.setDirtyCanvas?.(true, true);
+    app.canvas?.setDirty?.(true, true);
+    fitWidth(node);
+    updateWipe(node);
+  };
+  requestAnimationFrame(go);
+  setTimeout(go, 150);
+}
+
 app.registerExtension({
   name: "Compare3.ImageCompare",
   nodeCreated(node) {
@@ -277,9 +310,23 @@ app.registerExtension({
       setImages(this, message?.compare3 || []);
     };
 
+    const onResize = node.onResize;
+    node.onResize = function () {
+      onResize?.apply(this, arguments);
+      fitWidth(this);
+      updateWipe(this);
+    };
+
+    const onDrawForeground = node.onDrawForeground;
+    node.onDrawForeground = function () {
+      onDrawForeground?.apply(this, arguments);
+      fitWidth(this);
+    };
+
     const onConfigure = node.onConfigure;
     node.onConfigure = function () {
       onConfigure?.apply(this, arguments);
+      relayout(this);
       const s = this.properties?.[STATE_KEY];
       if (!s) return;
       this._c3Show = s.show || 1;
@@ -288,5 +335,6 @@ app.registerExtension({
     };
 
     refresh(node);
+    relayout(node);
   },
 });
