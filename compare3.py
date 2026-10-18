@@ -1,4 +1,5 @@
 # Inspired by "Image Compare Pixaroma" from https://github.com/pixaroma/ComfyUI-Pixaroma (MIT).
+import json
 import os
 import random
 from datetime import datetime
@@ -6,8 +7,10 @@ from datetime import datetime
 import numpy as np
 from aiohttp import web
 from PIL import Image
+from PIL.PngImagePlugin import PngInfo
 
 import folder_paths
+from comfy.cli_args import args
 from server import PromptServer
 
 
@@ -85,7 +88,16 @@ async def compare3_save(request):
         while os.path.exists(os.path.join(out_dir, file)):
             n += 1
             file = f"{stamp}-image{slot}_{n}.png"
-        img.save(os.path.join(out_dir, file), compress_level=4)
+        pnginfo = None
+        if not getattr(args, "disable_metadata", False):
+            workflow, prompt = data.get("workflow"), data.get("prompt")
+            if workflow is not None or prompt is not None:
+                pnginfo = PngInfo()
+                if prompt is not None:
+                    pnginfo.add_text("prompt", json.dumps(prompt))
+                if workflow is not None:
+                    pnginfo.add_text("workflow", json.dumps(workflow))
+        img.save(os.path.join(out_dir, file), pnginfo=pnginfo, compress_level=4)
         return web.json_response({"filename": file, "subfolder": ""})
     except Exception as e:  # noqa: BLE001
         return web.json_response({"error": str(e)}, status=500)

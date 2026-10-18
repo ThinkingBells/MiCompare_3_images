@@ -33,7 +33,7 @@ Restart ComfyUI and refresh the browser.
 
 ## Notes
 
-Only the images are saved (no workflow metadata is embedded). Previews live in ComfyUI's `temp` folder, so they disappear after a restart until the workflow is run again.
+The **Save Workflow** switch (orange = ON, gray = OFF) controls whether the workflow (and prompt) is embedded in the saved PNG, so it can be dragged back into ComfyUI. It is ON by default and the choice is remembered per node (embedding is skipped anyway if ComfyUI runs with `--disable-metadata`). Previews live in ComfyUI's `temp` folder, so they disappear after a restart until the workflow is run again.
 
 ## Credits
 

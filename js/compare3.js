@@ -125,8 +125,31 @@ function buildUI(node) {
     updateWipe(node);
   };
 
-  root.append(row1, rowD, row2, info, view);
-  node._c3 = { root, showBtns, wipeBtns, saveBtns, dims, img, imgB, bar, tagL, tagR, note, view };
+  const metaRow = document.createElement("div");
+  metaRow.style.cssText = "display:flex;justify-content:flex-end;align-items:center;gap:6px;";
+  const metaLabel = document.createElement("span");
+  metaLabel.textContent = "Save Workflow";
+  metaLabel.style.cssText = "font:11px 'Segoe UI',sans-serif;color:#aaa;";
+  // Toggle switch: green + knob right = ON, gray + knob left = OFF.
+  const metaBtn = document.createElement("button");
+  metaBtn.type = "button";
+  metaBtn.style.cssText =
+    "position:relative;flex:none;width:34px;height:18px;padding:0;border-radius:9px;" +
+    "cursor:pointer;border:1px solid #555;transition:background .15s,border-color .15s;";
+  const knob = document.createElement("span");
+  knob.style.cssText =
+    "position:absolute;top:2px;width:12px;height:12px;border-radius:50%;background:#fff;" +
+    "transition:left .15s;";
+  metaBtn.appendChild(knob);
+  metaBtn.onclick = () => {
+    node._c3Meta = !node._c3Meta;
+    refresh(node);
+    saveState(node);
+  };
+  metaRow.append(metaLabel, metaBtn);
+
+  root.append(row1, rowD, row2, info, metaRow, view);
+  node._c3 = { root, metaBtn, showBtns, wipeBtns, saveBtns, dims, img, imgB, bar, tagL, tagR, note, view };
   return root;
 }
 
@@ -162,6 +185,14 @@ function refresh(node) {
     setActive(ui.wipeBtns[i], show === `w${a}${b}`);
     ui.wipeBtns[i].style.opacity = imgs[a - 1] && imgs[b - 1] ? "1" : "0.5";
   });
+  const metaOn = node._c3Meta !== false;
+  ui.metaBtn.style.background = metaOn ? ACCENT : "#3a3c3e";
+  ui.metaBtn.style.borderColor = metaOn ? ACCENT : "#555";
+  ui.metaBtn.firstChild.style.left = metaOn ? "18px" : "2px";
+  ui.metaBtn.firstChild.style.background = metaOn ? "#fff" : "#bbb";
+  ui.metaBtn.title = metaOn
+    ? "ON: the workflow is saved inside the images. Click to turn off."
+    : "OFF: images are saved without the workflow. Click to turn on.";
   ui.img.style.display = "none";
   ui.imgB.style.display = "none";
   ui.bar.style.display = "none";
@@ -210,6 +241,7 @@ function saveState(node) {
   node.properties = node.properties || {};
   node.properties[STATE_KEY] = {
     show: node._c3Show || 1,
+    meta: node._c3Meta !== false,
     images: (node._c3Imgs || []).map((m) =>
       m ? { filename: m.filename, subfolder: m.subfolder, type: m.type } : null),
   };
@@ -245,10 +277,16 @@ async function saveToOutput(node, n, btn) {
   const m = node._c3Imgs?.[n - 1];
   if (!m) { toast(`Image ${n} is not available - run the workflow first`); return; }
   try {
+    const payload = { filename: m.filename, subfolder: m.subfolder, type: m.type, slot: n };
+    if (node._c3Meta !== false) {
+      const { workflow, output } = await app.graphToPrompt();
+      payload.workflow = workflow;
+      payload.prompt = output;
+    }
     const resp = await api.fetchApi("/compare3/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename: m.filename, subfolder: m.subfolder, type: m.type, slot: n }),
+      body: JSON.stringify(payload),
     });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) { toast(`Save failed: ${data.error || resp.status}`); return; }
@@ -295,6 +333,7 @@ app.registerExtension({
   nodeCreated(node) {
     if (node.comfyClass !== "Compare3") return;
     node._c3Show = 1;
+    node._c3Meta = true;
     node._c3Imgs = [null, null, null];
 
     const widget = node.addDOMWidget("compare3_ui", "compare3", buildUI(node), {
@@ -330,6 +369,7 @@ app.registerExtension({
       const s = this.properties?.[STATE_KEY];
       if (!s) return;
       this._c3Show = s.show || 1;
+      this._c3Meta = s.meta !== false;
       setImages(this, (s.images || [])
         .map((m, i) => (m ? { ...m, slot: i + 1 } : null)).filter(Boolean));
     };
