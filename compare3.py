@@ -1,7 +1,6 @@
 # Inspired by "Image Compare Pixaroma" from https://github.com/pixaroma/ComfyUI-Pixaroma (MIT).
 import json
 import os
-import random
 from datetime import datetime
 
 import numpy as np
@@ -14,6 +13,16 @@ from comfy.cli_args import args
 from server import PromptServer
 
 
+def unique_name(directory, stamp, slot):
+    """MM-dd-HH-mm-ss-imageN.png, with _2, _3... if that name is already taken."""
+    file = f"{stamp}-image{slot}.png"
+    n = 1
+    while os.path.exists(os.path.join(directory, file)):
+        n += 1
+        file = f"{stamp}-image{slot}_{n}.png"
+    return file
+
+
 class Compare3:
     DESCRIPTION = (
         "MiCompare 3 images - wire up to three IMAGE outputs and switch between them "
@@ -24,9 +33,6 @@ class Compare3:
     def __init__(self):
         self.output_dir = folder_paths.get_temp_directory()
         self.type = "temp"
-        self.prefix_append = "_cmp3_" + "".join(
-            random.choice("abcdefghijklmnopqrstuvwxyz") for _ in range(5)
-        )
 
     @classmethod
     def INPUT_TYPES(s):
@@ -46,20 +52,14 @@ class Compare3:
     def compare_images(self, image1=None, image2=None, image3=None):
         present = [(i, t) for i, t in enumerate((image1, image2, image3), 1) if t is not None]
         results = []
-        if present:
-            first = present[0][1]
-            prefix = "compare3" + self.prefix_append
-            folder, filename, counter, subfolder, _ = folder_paths.get_save_image_path(
-                prefix, self.output_dir, first[0].shape[1], first[0].shape[0]
-            )
-            for slot, tensor in present:
-                arr = 255.0 * tensor[0].cpu().numpy()
-                img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
-                file = f"{filename}_{counter:05}_.png"
-                img.save(os.path.join(folder, file), compress_level=4)
-                results.append({"filename": file, "subfolder": subfolder,
-                                "type": self.type, "slot": slot})
-                counter += 1
+        stamp = datetime.now().strftime("%m-%d-%H-%M-%S")
+        for slot, tensor in present:
+            arr = 255.0 * tensor[0].cpu().numpy()
+            img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+            file = unique_name(self.output_dir, stamp, slot)
+            img.save(os.path.join(self.output_dir, file), compress_level=4)
+            results.append({"filename": file, "subfolder": "",
+                            "type": self.type, "slot": slot})
         return {"ui": {"compare3": results}}
 
 
@@ -82,12 +82,7 @@ async def compare3_save(request):
 
         img = Image.open(src)
         out_dir = folder_paths.get_output_directory()
-        stamp = datetime.now().strftime("%m-%d-%H-%M-%S")
-        file = f"{stamp}-image{slot}.png"
-        n = 1
-        while os.path.exists(os.path.join(out_dir, file)):
-            n += 1
-            file = f"{stamp}-image{slot}_{n}.png"
+        file = unique_name(out_dir, datetime.now().strftime("%m-%d-%H-%M-%S"), slot)
         pnginfo = None
         if not getattr(args, "disable_metadata", False):
             workflow, prompt = data.get("workflow"), data.get("prompt")
