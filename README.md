@@ -2,6 +2,8 @@
 
 A small ComfyUI custom node to compare **up to three images** inside the node itself.
 
+![MI Compare 3 Images node](images/screenshot.webp)
+
 ## Features
 
 - Three optional `IMAGE` inputs: `image1`, `image2`, `image3` (a muted or unconnected branch never raises an error).
