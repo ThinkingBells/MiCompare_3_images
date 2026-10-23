@@ -47,7 +47,7 @@ class Compare3:
     RETURN_TYPES = ()
     FUNCTION = "compare_images"
     OUTPUT_NODE = True
-    CATEGORY = "image/compare"
+    CATEGORY = "MI nodes"
 
     def compare_images(self, image1=None, image2=None, image3=None):
         present = [(i, t) for i, t in enumerate((image1, image2, image3), 1) if t is not None]
@@ -99,4 +99,4 @@ async def compare3_save(request):
 
 
 NODE_CLASS_MAPPINGS = {"Compare3": Compare3}
-NODE_DISPLAY_NAME_MAPPINGS = {"Compare3": "MiCompare 3 images"}
+NODE_DISPLAY_NAME_MAPPINGS = {"Compare3": "MI Compare 3 Images"}

@@ -1,4 +1,4 @@
-# MiCompare 3 images
+# MI Compare 3 Images
 
 A small ComfyUI custom node to compare **up to three images** inside the node itself.
 
@@ -12,7 +12,7 @@ A small ComfyUI custom node to compare **up to three images** inside the node it
 - The viewer fills the node and scales when you resize it.
 - The images and the selected view are remembered when you switch workflow tabs or reload.
 
-The node appears as **MiCompare 3 images** in the `image/compare` category.
+The node appears as **MI Compare 3 Images** in the `MI nodes` category.
 
 ## Installation
 
@@ -27,7 +27,7 @@ Restart ComfyUI and refresh the browser.
 
 ## Usage
 
-1. Add **MiCompare 3 images** (double-click the canvas and search "MiCompare").
+1. Add **MI Compare 3 Images** (double-click the canvas and search "MI Compare").
 2. Connect up to three `IMAGE` outputs.
 3. Run the workflow, then pick an image with **Show N**, compare two of them with **Wipe A-B**, and save with **Save N**.
 

@@ -8,5 +8,5 @@ requires-python = ">=3.10"
 dependencies = []
 
 [tool.comfy]
-DisplayName = "MiCompare 3 images"
+DisplayName = "MI Compare 3 Images"
 # PublisherId = "your-publisher-id"
