@@ -2,7 +2,7 @@
 
 A small ComfyUI custom node to compare **up to three images** inside the node itself.
 
-![MI Compare 3 Images node](images/screenshot.webp)
+![MI Compare 3 Images node](images/screenshot.png)
 
 ## Features
 
